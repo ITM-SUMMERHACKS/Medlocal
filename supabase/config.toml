@@ -1,0 +1,4 @@
+project_id = "sotiikvmuaajybymxspl"
+
+[functions.ocr-prescription]
+verify_jwt = true
