@@ -99,7 +99,7 @@ const Auth = () => {
             <Heart className="h-7 w-7 text-primary-foreground" fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Welcome to MediMarket</h1>
+            <h1 className="text-2xl font-bold">Welcome to MedLocal</h1>
             <p className="text-sm text-muted-foreground">Compare. Order. Save lives.</p>
           </div>
         </div>
