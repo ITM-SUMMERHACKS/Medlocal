@@ -1,12 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useGeolocation } from "@/hooks/useGeolocation";
 import { haversineKm } from "@/lib/distance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Loader2, Store, Phone, Navigation } from "lucide-react";
+
+interface Medicine {
+  name: string;
+  price: number;
+}
 
 interface Pharmacy {
   id: string;
@@ -16,13 +20,15 @@ interface Pharmacy {
   lat: number;
   lng: number;
   is_open: boolean;
+  medicines: Medicine[];
   distance_km?: number;
+  matchedPrice?: number;
 }
 
 const SearchPage = () => {
   const { user } = useAuth();
 
-  // force Kharghar for demo
+  // fixed location (demo safe)
   const coords = { lat: 19.047, lng: 73.069 };
 
   const [q, setQ] = useState("");
@@ -32,7 +38,7 @@ const SearchPage = () => {
   const fetchPharmacies = useCallback(async (query: string = "") => {
     setLoading(true);
 
-    await new Promise((res) => setTimeout(res, 800));
+    await new Promise((res) => setTimeout(res, 600));
 
     const dummyData: Pharmacy[] = [
       {
@@ -43,6 +49,10 @@ const SearchPage = () => {
         lat: 19.046,
         lng: 73.070,
         is_open: true,
+        medicines: [
+          { name: "Paracetamol", price: 25 },
+          { name: "Crocin", price: 30 }
+        ]
       },
       {
         id: "2",
@@ -52,6 +62,10 @@ const SearchPage = () => {
         lat: 19.049,
         lng: 73.065,
         is_open: true,
+        medicines: [
+          { name: "Paracetamol", price: 22 },
+          { name: "Crocin", price: 28 }
+        ]
       },
       {
         id: "3",
@@ -61,6 +75,9 @@ const SearchPage = () => {
         lat: 19.052,
         lng: 73.072,
         is_open: false,
+        medicines: [
+          { name: "Paracetamol", price: 30 }
+        ]
       },
       {
         id: "4",
@@ -70,51 +87,31 @@ const SearchPage = () => {
         lat: 19.045,
         lng: 73.068,
         is_open: true,
-      },
-      {
-        id: "5",
-        name: "HealthPlus Medical",
-        address: "Sector 15, Kharghar",
-        phone: "9871122334",
-        lat: 19.048,
-        lng: 73.071,
-        is_open: true,
-      },
-      {
-        id: "6",
-        name: "LifeCare Pharmacy",
-        address: "Sector 5, Kharghar",
-        phone: "9000011122",
-        lat: 19.044,
-        lng: 73.067,
-        is_open: false,
-      },
-      {
-        id: "7",
-        name: "CareWell Medical",
-        address: "Sector 21, Kharghar",
-        phone: "9334455667",
-        lat: 19.053,
-        lng: 73.073,
-        is_open: true,
-      },
-      {
-        id: "8",
-        name: "CityMed Pharmacy",
-        address: "Sector 8, Kharghar",
-        phone: "9112233445",
-        lat: 19.047,
-        lng: 73.066,
-        is_open: true,
+        medicines: [
+          { name: "Paracetamol", price: 24 }
+        ]
       }
     ];
 
-    let filtered = dummyData;
+    let filtered: Pharmacy[] = [];
 
     if (query.trim()) {
-      filtered = dummyData.filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase())
-      );
+      filtered = dummyData
+        .map((p) => {
+          const match = p.medicines.find((m) =>
+            m.name.toLowerCase().includes(query.toLowerCase())
+          );
+
+          if (!match) return null;
+
+          return {
+            ...p,
+            matchedPrice: match.price
+          };
+        })
+        .filter(Boolean) as Pharmacy[];
+    } else {
+      filtered = dummyData;
     }
 
     const decorated = filtered
@@ -122,7 +119,13 @@ const SearchPage = () => {
         ...p,
         distance_km: haversineKm(coords.lat, coords.lng, p.lat, p.lng),
       }))
-      .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+      .sort((a, b) => {
+        // sort by price if searching, else by distance
+        if (query.trim()) {
+          return (a.matchedPrice || 999) - (b.matchedPrice || 999);
+        }
+        return (a.distance_km || 0) - (b.distance_km || 0);
+      });
 
     setPharmacies(decorated);
     setLoading(false);
@@ -137,12 +140,17 @@ const SearchPage = () => {
     fetchPharmacies();
   }, [fetchPharmacies]);
 
+  // find cheapest for highlight
+  const cheapestPrice = Math.min(
+    ...pharmacies.map((p) => p.matchedPrice || Infinity)
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold md:text-3xl">Nearby Pharmacies</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Find Medicines Nearby</h1>
         <p className="text-sm text-muted-foreground">
-          Find and compare pharmacies near you.
+          Search medicines and compare prices across pharmacies.
         </p>
       </div>
 
@@ -152,11 +160,11 @@ const SearchPage = () => {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search pharmacy..."
+            placeholder="Search medicine (e.g. Paracetamol)"
             className="h-12 pl-10 text-base"
           />
         </div>
-        <Button type="submit" disabled={loading} className="bg-gradient-primary">
+        <Button type="submit" disabled={loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
         </Button>
       </form>
@@ -164,13 +172,13 @@ const SearchPage = () => {
       <div className="grid gap-4 sm:grid-cols-2">
         {pharmacies.length === 0 && !loading && (
           <div className="col-span-full text-center text-muted-foreground py-10">
-            No pharmacies found.
+            No results found.
           </div>
         )}
 
         {pharmacies.map((p) => (
           <Card key={p.id} className="p-5 space-y-3 hover:shadow-md transition">
-            
+
             {/* HEADER */}
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2">
@@ -178,16 +186,25 @@ const SearchPage = () => {
                 <span className="font-semibold">{p.name}</span>
               </div>
 
-              <Badge
-                className={
-                  p.is_open
-                    ? "bg-green-500 text-white"
-                    : "bg-red-500 text-white"
-                }
-              >
+              <Badge className={p.is_open ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
                 {p.is_open ? "Open Now" : "Closed"}
               </Badge>
             </div>
+
+            {/* PRICE DISPLAY */}
+            {p.matchedPrice && (
+              <div className="flex items-center justify-between">
+                <div className="text-lg font-bold text-green-600">
+                  ₹{p.matchedPrice}
+                </div>
+
+                {p.matchedPrice === cheapestPrice && (
+                  <Badge className="bg-yellow-400 text-black">
+                    Best Price
+                  </Badge>
+                )}
+              </div>
+            )}
 
             {/* DETAILS */}
             <div className="text-sm text-muted-foreground space-y-1">
@@ -224,9 +241,10 @@ const SearchPage = () => {
               </Button>
 
               <Button className="flex-1 bg-gradient-primary">
-                View Stock
+                Buy Now
               </Button>
             </div>
+
           </Card>
         ))}
       </div>
