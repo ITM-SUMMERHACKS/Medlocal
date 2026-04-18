@@ -63,7 +63,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               <Heart className="h-5 w-5 text-primary-foreground" fill="currentColor" />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-base font-bold tracking-tight">MediMarket</span>
+              <span className="text-base font-bold tracking-tight">MedLocal</span>
               <span className="hidden text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">
                 Care, connected
               </span>

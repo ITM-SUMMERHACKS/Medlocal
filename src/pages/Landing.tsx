@@ -10,7 +10,7 @@ const Landing = () => {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
             <Heart className="h-5 w-5 text-primary-foreground" fill="currentColor" />
           </div>
-          <span className="text-lg font-bold">MediMarket</span>
+          <span className="text-lg font-bold">MedLocal</span>
         </div>
         <Link to="/auth">
           <Button variant="ghost" size="sm">Sign in</Button>
@@ -67,7 +67,7 @@ const Landing = () => {
       </section>
 
       <footer className="border-t bg-card/50 py-6 text-center text-xs text-muted-foreground">
-        © MediMarket — built for the healthcare hackathon
+        © MedLocal — built for the healthcare hackathon
       </footer>
     </div>
   );
