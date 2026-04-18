@@ -141,8 +141,14 @@ const BloodBank = () => {
 
               {/* USER */}
               <Marker position={[coords.lat, coords.lng]}>
-                <Popup>Your location</Popup>
-              </Marker>
+                <Popup>
+                  <div className="space-y-1 text-sm">
+                    <div><b>Name:</b> Ravi Gupta</div>
+                    <div><b>Age:</b> 21</div>
+                    <div><b>Blood Group:</b> O+</div>
+                    <div><b>Contact:</b> 8446585687</div>
+                  </div>
+                </Popup>              </Marker>
 
               {/* DUMMY DONORS */}
               {[

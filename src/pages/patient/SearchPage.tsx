@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Loader2, Store, Phone, Navigation } from "lucide-react";
-import { toast } from "sonner";
 
 interface Pharmacy {
   id: string;
@@ -22,7 +21,9 @@ interface Pharmacy {
 
 const SearchPage = () => {
   const { user } = useAuth();
-  const { coords } = useGeolocation();
+
+  // force Kharghar for demo
+  const coords = { lat: 19.047, lng: 73.069 };
 
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,9 +33,6 @@ const SearchPage = () => {
     setLoading(true);
 
     await new Promise((res) => setTimeout(res, 800));
-
-    const userLat = coords?.lat || 19.047;
-    const userLng = coords?.lng || 73.069;
 
     const dummyData: Pharmacy[] = [
       {
@@ -122,13 +120,13 @@ const SearchPage = () => {
     const decorated = filtered
       .map((p) => ({
         ...p,
-        distance_km: haversineKm(userLat, userLng, p.lat, p.lng),
+        distance_km: haversineKm(coords.lat, coords.lng, p.lat, p.lng),
       }))
       .sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
 
     setPharmacies(decorated);
     setLoading(false);
-  }, [coords]);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +152,7 @@ const SearchPage = () => {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search Medicines..."
+            placeholder="Search pharmacy..."
             className="h-12 pl-10 text-base"
           />
         </div>
@@ -172,16 +170,26 @@ const SearchPage = () => {
 
         {pharmacies.map((p) => (
           <Card key={p.id} className="p-5 space-y-3 hover:shadow-md transition">
+            
+            {/* HEADER */}
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2">
                 <Store className="text-primary" />
                 <span className="font-semibold">{p.name}</span>
               </div>
-              <Badge className={p.is_open ? "bg-green-500" : ""}>
-                {p.is_open ? "Open" : "Closed"}
+
+              <Badge
+                className={
+                  p.is_open
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }
+              >
+                {p.is_open ? "Open Now" : "Closed"}
               </Badge>
             </div>
 
+            {/* DETAILS */}
             <div className="text-sm text-muted-foreground space-y-1">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
@@ -201,6 +209,7 @@ const SearchPage = () => {
               )}
             </div>
 
+            {/* ACTIONS */}
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
@@ -213,6 +222,7 @@ const SearchPage = () => {
               >
                 Directions
               </Button>
+
               <Button className="flex-1 bg-gradient-primary">
                 View Stock
               </Button>
